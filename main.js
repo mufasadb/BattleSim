@@ -6,7 +6,7 @@ const numpCPUs = require("os").cpus().length
 
 const fightSettings = {
     turnsBeforeCallDraw: 100,
-    numberOfIterationsInTestFight: 10000,
+    numberOfIterationsInTestFight: 100000,
     moveLogic: "random" //random, stab, typeadvantage, power, mostDamage
 }
 
