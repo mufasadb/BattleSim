@@ -1,5 +1,6 @@
 const Tools = require("./tools")
 const DamageCalc = require("./damage")
+const math = require('mathjs');
 
 function decideMove(attacker, defender, weather) {
     if (attacker.teamNumber === 1) {
@@ -78,20 +79,55 @@ function weightedDecision(attacker, defender) {
             let move = attacker.moves[moveIndex]
             let stab = 0
             for (type of attacker.types) { if (move.type === type) { stab = 100 } }
-
             let power = move.power
             let typeMulti = DamageCalc.typeMod(attacker, defender, move) * 100
             let accuracy = move.accuracy
+            let pp = move.pp * 4
+            let enemyHealth = defender.health / defender.maxHealth * 100
+            let myHealth = attacker.health / attacker.maxHealth * 100
 
+
+            if (power == "-") { power = 0 };
+            if (accuracy == "-") { accuracy = 100 }
+
+            let possibleMoveInputMatrix = [stab, power, typeMulti, accuracy, pp, enemyHealth, myHealth]
+
+            for (effect of ["Poison", "Confusion", "Sleep", "Burn", "Paralysis"]) {
+                let statPush = 0
+                for (status in move.status) {
+                    if (move.status[status] == effect) {
+                        statPush = move.statusChance[status] * 100
+                    }
+                }
+                possibleMoveInputMatrix.push(statPush)
+            }
+            for (stat of ["defence", "attack", "speed", "specialDefence", "specialAttack"]) {
+                let statPush = 0
+                for (effectStat of move.effects) {
+                    if (stat == effectStat.stat) {
+                        statPush = effectStat.stages * 100
+                        if (effectStat.chance) {
+                            statPush * effectStat.chance
+                        }
+                    }
+                }
+                possibleMoveInputMatrix.push(statPush)
+            }
+            possibleMoveInputMatrix = math.matrix([possibleMoveInputMatrix]);
+            let possibleMoveHidden = math.multiply(possibleMoveInputMatrix, Tools.calcSettings.toHiddenWeighting)
+            let possibleMoveOutput = math.multiply(possibleMoveHidden, Tools.calcSettings.toOutputWeighting)
+            possibleMoveWeighting.push(possibleMoveOutput)
         }
         let chosenMove = possibleMoves[0]
-        let powerCompare = possibleMoveWeighting[0]
+        let powerCompare = possibleMoveWeighting[0]._data[0][0]
         for (move in possibleMoves) {
-            if (possibleMoveWeighting[move] > powerCompare) {
+            // console.log(`move ${move}, has ${possibleMoveWeighting[move]._data[0][0]} rating`)
+            if (possibleMoveWeighting[move]._data[0][0] > powerCompare) {
                 chosenMove = possibleMoves[move];
-                powerCompare = possibleMoveWeighting[move]
+                powerCompare = possibleMoveWeighting[move]._data[0][0]
             }
         }
+        // console.log('\x1b[36m%s\x1b[0m',`I chose ${chosenMove}`,"\x1b[0m")
         return chosenMove
 
     }

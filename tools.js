@@ -6,7 +6,9 @@ checkEachMon(allPokemonList)
 
 
 const calculationSettings = {
-    useAccuracy: true
+    useAccuracy: true,
+    toHiddenWeighting: [],
+    toOutputWeighting: []
 }
 
 const decideValueSettings = {
@@ -148,5 +150,6 @@ module.exports = {
     calcHeavySlamPower: (attackerWeight, defenderWeight) => { return heavySlamTable(attackerWeight, defenderWeight) },
     calcSettings: calculationSettings,
     decideValueSettings: decideValueSettings,
-    allPokemonList: allPokemonList
+    allPokemonList: allPokemonList,
+    forks: 3
 }

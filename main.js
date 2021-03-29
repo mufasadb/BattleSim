@@ -1,21 +1,30 @@
 const Pokemon = require("./Pokemon");
 const Battle = require("./battle");
 const Member = require("./remember")
-const cluster = require("cluster");
-const numpCPUs = require("os").cpus().length
+const math = require('mathjs');
+const Tools = require('./tools')
+
+const { Worker, parentPort, workerData } = require('worker_threads');
+// const { id } = workerData;
+// console.log(workerData[0])
+
+
 
 const fightSettings = {
     turnsBeforeCallDraw: 100,
-    numberOfIterationsInTestFight: 100000,
+    numberOfIterationsInTestFight: 1000,
     moveLogic: "random" //random, stab, typeadvantage, power, mostDamage
 }
 
-function oneTest(fightSettings) {
+
+function runFights() {
     const Remember = Member.create()
     const fromTime = new Date().getTime()
 
     function iterativeTest(fightSettings) {
         for (let i = 0; i < fightSettings.numberOfIterationsInTestFight; i++) {
+            if (i % 10 == 0) {
+            }
             let team1 = Pokemon.buildTeam(1, fightSettings.moveLogic);
             let team2 = Pokemon.buildTeam(2, fightSettings.moveLogic);
             Battle.fight(team1, team2, fightSettings, Remember)
@@ -54,24 +63,24 @@ function oneTest(fightSettings) {
 
     // console.log(Remember.score);
 
-    console.log(`${process.pid} Draws: ${Remember.score.draws}`)
-    console.log(`${process.pid} Team One won ${Math.round((Remember.score.teamOneWins / (Remember.score.teamOneWins + Remember.score.teamTwoWins) * 10000)) / 100} % of time`)
-    console.log(`${process.pid} Average Turns per battle ${Remember.score.totalTurnsToWin / Remember.score.played} `)
+    // console.log(`${process.pid} Draws: ${Remember.score.draws}`)
+    // console.log(`${process.pid} Team One won ${Math.round((Remember.score.teamOneWins / (Remember.score.teamOneWins + Remember.score.teamTwoWins) * 10000)) / 100} % of time`)
+    // console.log(`${process.pid} Average Turns per battle ${Remember.score.totalTurnsToWin / Remember.score.played} `)
 
-    console.log(`${process.pid} It took ${timeDiff} seconds to run`)
+    // console.log(`${process.pid} this event was ${timeDiff} seconds to run`)
+    let monList = Remember.returnMonDataSorted()
+    let favMon = monList[monList.length - 1]
+    let moveList = Remember.returnDamageDataSorted()
+    let favMove = moveList[moveList.length - 1]
 
-    return (Remember)
+    let results = { winPercentage: Math.round((Remember.score.teamOneWins / (Remember.score.teamOneWins + Remember.score.teamTwoWins) * 10000)) / 100, favouritePokemon: favMon, favouriteMove: favMove }
+
+    return results
 }
-// console.log(oneTest(fightSettings));
 
-
-if (cluster.isMaster) {
-    for (let i = 0; i < 3; i++) {
-        cluster.fork();
-    }
-    console.log("I am master")
-} else {
-    console.log(`${process.pid} I am worker`)
-    oneTest(fightSettings)
-    process.exit(0)
+for (worker of workerData) {
+    Tools.calcSettings.toHiddenWeighting = math.matrix(worker.toHiddenWeighting._data)
+    Tools.calcSettings.toOutputWeighting = math.matrix(worker.toOutputWeighting._data)
+    const results = runFights()
+    parentPort.postMessage({ id: worker.id, results: results });
 }
