@@ -1,4 +1,5 @@
-const math = require('mathjs');
+// const math = require('mathjs');
+const tf = require("@tensorflow/tfjs")
 
 
 class Player {
@@ -6,8 +7,8 @@ class Player {
         const min = -1
         const max = 1
         this.id = id
-        this.toHiddenWeighting = math.matrix(randomMatrix(inputLength, hiddenLength, min, max))
-        this.toOutputWeighting = math.matrix(randomMatrix(hiddenLength, outputLength, min, max))
+        this.toHiddenWeighting = randomMatrix(inputLength, hiddenLength, min, max)
+        this.toOutputWeighting = randomMatrix(hiddenLength, outputLength, min, max)
         this.favouritePokemon = ""
         this.favouriteMove = ""
         this.winPercentage = ""

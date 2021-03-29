@@ -3,6 +3,7 @@ const Battle = require("./battle");
 const Member = require("./remember")
 const math = require('mathjs');
 const Tools = require('./tools')
+const tf = require("@tensorflow/tfjs")
 
 const { Worker, parentPort, workerData } = require('worker_threads');
 // const { id } = workerData;
@@ -79,8 +80,10 @@ function runFights() {
 }
 
 for (worker of workerData) {
-    Tools.calcSettings.toHiddenWeighting = math.matrix(worker.toHiddenWeighting._data)
-    Tools.calcSettings.toOutputWeighting = math.matrix(worker.toOutputWeighting._data)
+    Tools.calcSettings.toHiddenWeighting = tf.tensor(worker.toHiddenWeighting)
+    Tools.calcSettings.toOutputWeighting = tf.tensor(worker.toOutputWeighting)
     const results = runFights()
     parentPort.postMessage({ id: worker.id, results: results });
+    Tools.calcSettings.toOutputWeighting.dispose()
+    Tools.calcSettings.toHiddenWeighting.dispose()
 }

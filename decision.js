@@ -1,6 +1,8 @@
 const Tools = require("./tools")
 const DamageCalc = require("./damage")
-const math = require('mathjs');
+// const math = require('mathjs');
+const tf = require("@tensorflow/tfjs")
+
 
 function decideMove(attacker, defender, weather) {
     if (attacker.teamNumber === 1) {
@@ -32,7 +34,7 @@ function decideMove(attacker, defender, weather) {
                 let multiplier = 0
                 for (move of possibleMoves) {
                     let typeMod = DamageCalc.typeMod(attacker, defender, move)
-                    if (typeMod > multiplier) { chosenMove = move; multiplier = typeMod; }
+                    if (typeMod > multiplier) { chosenMove = movgite; multiplier = typeMod; }
                 }
                 return chosenMove
             }
@@ -113,18 +115,22 @@ function weightedDecision(attacker, defender) {
                 }
                 possibleMoveInputMatrix.push(statPush)
             }
-            possibleMoveInputMatrix = math.matrix([possibleMoveInputMatrix]);
-            let possibleMoveHidden = math.multiply(possibleMoveInputMatrix, Tools.calcSettings.toHiddenWeighting)
-            let possibleMoveOutput = math.multiply(possibleMoveHidden, Tools.calcSettings.toOutputWeighting)
-            possibleMoveWeighting.push(possibleMoveOutput)
+            const possibleMoveOutput = tf.tidy(() => {
+                possibleMoveInputMatrix = tf.tensor([possibleMoveInputMatrix]);
+                let possibleMoveHidden = tf.matMul(possibleMoveInputMatrix, Tools.calcSettings.toHiddenWeighting)
+                let output = tf.matMul(possibleMoveHidden, Tools.calcSettings.toOutputWeighting)
+
+                return output.dataSync();
+            })
+            possibleMoveWeighting.push(possibleMoveOutput[0])
         }
         let chosenMove = possibleMoves[0]
-        let powerCompare = possibleMoveWeighting[0]._data[0][0]
+        let powerCompare = possibleMoveWeighting[0]
         for (move in possibleMoves) {
             // console.log(`move ${move}, has ${possibleMoveWeighting[move]._data[0][0]} rating`)
-            if (possibleMoveWeighting[move]._data[0][0] > powerCompare) {
+            if (possibleMoveWeighting[move] > powerCompare) {
                 chosenMove = possibleMoves[move];
-                powerCompare = possibleMoveWeighting[move]._data[0][0]
+                powerCompare = possibleMoveWeighting[move]
             }
         }
         // console.log('\x1b[36m%s\x1b[0m',`I chose ${chosenMove}`,"\x1b[0m")
