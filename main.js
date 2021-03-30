@@ -13,7 +13,7 @@ const { Worker, parentPort, workerData } = require('worker_threads');
 const fightSettings = {
     turnsBeforeCallDraw: 100,
     numberOfIterationsInTestFight: 1000,
-    moveLogic: "random" //random, stab, typeadvantage, power, mostDamage
+    moveLogic: "power" //random, stab, typeadvantage, power, mostDamage
 }
 
 

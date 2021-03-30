@@ -1,8 +1,10 @@
 const math = require('mathjs');
 
+const mutationPercentage = 2.5 / 100
+const mutationChangePercentage = 10 / 100 + 1
 
 class Player {
-    constructor(inputLength, hiddenLength, outputLength, id) {
+    constructor(inputLength, hiddenLength, outputLength, id, generation) {
         const min = -1
         const max = 1
         this.id = id
@@ -11,6 +13,8 @@ class Player {
         this.favouritePokemon = ""
         this.favouriteMove = ""
         this.winPercentage = ""
+        this.generation = generation
+        this.mutationCount = 0
     }
     predict(input) {
         const output = math.multiply(math.multiply(input, toHiddenWeighting), toOutputWeighting)
@@ -35,6 +39,18 @@ class Player {
         }
         return { toHiddenSequence: newToHiddenSequence, toOutputSequence: newToOutputSequence }
     }
+    mutate() {
+        this.mutationCount++
+        for (let i = 0; i < this.toHiddenWeighting._data.length; i++) {
+            let genomeGroup = this.toHiddenWeighting._data[i]
+            for (let j = 0; j < genomeGroup.length; j++) {
+                let genome = genomeGroup[j]
+                let chance = Math.random()
+                if (chance < 1 - mutationPercentage) { genome = genome * mutationChangePercentage }
+                if (chance > 0 + mutationPercentage) { genome = genome * mutationChangePercentage * -1 }
+            }
+        }
+    }
     play() {
         const results = main.runFights({ hws: this.toHiddenWeighting, ows: this.toOutputSequence })
         this.winPercentage = results.winPercentage
@@ -58,7 +74,7 @@ function randomMatrix(rows, columns, lowVal, highVal) {
 }
 
 module.exports = {
-    create: (inputLength, hiddenLength, outputLength, id) => { return new Player(inputLength, hiddenLength, outputLength, id) }
+    create: (inputLength, hiddenLength, outputLength, id, generation) => { return new Player(inputLength, hiddenLength, outputLength, id, generation) }
 }
 
 
